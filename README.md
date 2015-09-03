@@ -2,7 +2,7 @@
 
 A Cloud Foundry Service Broker for Amazon S3 built using the [spring-boot-cf-service-broker](https://github.com/cloudfoundry-community/spring-boot-cf-service-broker).
 
-The broker currently publishes a single service and plan for provisioning S3 buckets.
+The broker currently publishes a single service and at most 2 plans for provisioning S3 buckets.
 
 ## Design
 
@@ -17,7 +17,10 @@ Simply run the JAR file and provide AWS credentials via the `AWS_ACCESS_KEY` and
 ### Locally
 
 ```
-mvn package && AWS_ACCESS_KEY=secret AWS_SECRET_KEY=secret java -jar target/s3-cf-service-broker-2.3.0-SNAPSHOT.jar
+mvn package
+AWS_ACCESS_KEY=secret AWS_SECRET_KEY=secret java -jar target/s3-cf-service-broker-2.3.0-SNAPSHOT.jar
+# with shared plan enabled
+AWS_ACCESS_KEY=secret AWS_SECRET_KEY=secret AWS_SHARED_BUCKET=cloud-foundry-shared java -jar target/s3-cf-service-broker-2.3.0-SNAPSHOT.jar
 ```
 
 ### In Cloud Foundry
@@ -29,6 +32,7 @@ cf push s3-cf-service-broker -p target/s3-cf-service-broker-2.3.0-SNAPSHOT.jar -
 cf set-env s3-cf-service-broker AWS_ACCESS_KEY "MYAWSKEY"
 cf set-env s3-cf-service-broker AWS_SECRET_KEY "MYAWSSECRET"
 cf set-env s3-cf-service-broker AWS_REGION "eu-west-1" # (optional, default: US (= us-east-1))
+cf set-env s3-cf-service-broker AWS_SHARED_BUCKET "cloud-foundry-shared" # (optional to enable Shared Plan)
 cf set-env s3-cf-service-broker JAVA_OPTS "-Dsecurity.user.password=mysecret"
 ```
 
@@ -59,6 +63,21 @@ The credentials provided in a bind call have the following format:
 	"access_key_id":"secret",
 	"bucket":"cloud-foundry-2eac2d52-bfc9-4d0f-af28-c02187689d72",
 	"secret_access_key":"secret"
+}
+```
+Or when using the shared plan:
+```
+"credentials": {
+	"access_key_id": "AKIAJ7R2GN4HSTTUVFPA",
+	"bucket": "cloud-foundry-shared",
+	"encryption_keys": [{
+		"algorithm": "DESede",
+		"key": "secret",
+		"keyID": "generated"
+	}],
+	"key_suffix": "_2eac2d52-bfc9-4d0f-af28-c02187689d72",
+	"secret_access_key": "secret",
+	"username": "s3"
 }
 ```
 
@@ -122,6 +141,46 @@ All buckets are tagged with the following values:
 * spaceGuid
 
 The ability to apply additional custom tags is in the works.
+
+### Shared Plan
+
+Shared plans could be used in environments where data is encrypted and decrypted at application level. A service provisioning call will create a shared S3 bucket (if not already present), a shared IAM user (if not present) and attach an [IAM User Policy](src/main/resources/shared-bucket-user-iam-policy.json) to provide access controls on the bucket. The presence of the shared IAM user is checked by retrieving the ```config/shared_credentials``` object from the S3 bucket. A binding call will expose the contents of ```config/[serviceInstanceId]``` file in the S3 bucket containing the encryption_keys, organizationalGuid and spaceGuid. The deprovisioning call will delete this file. Unbinding or deprovisioning calls will (currently) **not** delete any resources created.
+
+Additional environment variables for Shared Plan:
+
+Resource         | Environment Variable | Default                   | Example Value
+-----------------|----------------------|---------------------------|------------------------
+S3 Shared Bucket | AWS_SHARED_BUCKET    | (empty, disabled)         | -
+IAM Shared User  | AWS_SHARED_USER_NAME | ${USER_NAME_PREFIX}shared | cloud-foundry-s3-shared
+
+Once the service is bound to an application its corresponding VCAP_SERVICES entry looks like:
+```
+  "amazon-s3": [
+   {
+    "credentials": {
+     "access_key_id": "SHARED-ACCESS-KEY",
+     "bucket": "cloud-foundry-shared-bucket",
+     "encryption_keys": [
+      {
+       "algorithm": "DESede",
+       "key": "SOME-RANDOM-DES-EDE-KEY",
+       "keyID": "generated"
+      }
+     ],
+     "key_suffix": "_a60c742a-6848-4710-965e-f292a6b9dce3",
+     "secret_access_key": "SHARED-SECRET-KEY",
+     "username": "s3"
+    },
+    "label": "amazon-s3",
+    "name": "myapp-shareds3",
+    "plan": "shared",
+    "tags": [
+     "s3",
+     "object-storage"
+    ]
+   }
+  ]
+```
 
 ## Registering a Broker with the Cloud Controller
 

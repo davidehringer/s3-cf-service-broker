@@ -68,7 +68,7 @@ public class BasicPlan implements Plan {
         return new ServiceInstance(serviceInstanceId, service.getId(), planId, organizationGuid, spaceGuid, null);
     }
 
-    public ServiceInstance deleteServiceInstance(String id) {
+    public ServiceInstance deleteServiceInstance(String id, String serviceId, String planId) {
         ServiceInstance instance = s3.findServiceInstance(id);
         // TODO we need to make these deletes idempotent so we can handle retries on error
         iam.deleteGroupPolicyForInstance(id);

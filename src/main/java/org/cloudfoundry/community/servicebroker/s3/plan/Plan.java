@@ -28,7 +28,7 @@ public interface Plan {
     ServiceInstance createServiceInstance(ServiceDefinition service, String serviceInstanceId, String planId,
                                           String organizationGuid, String spaceGuid);
 
-    ServiceInstance deleteServiceInstance(String id);
+    ServiceInstance deleteServiceInstance(String id, String serviceId, String planId);
 
     ServiceInstanceBinding createServiceInstanceBinding(String bindingId, ServiceInstance serviceInstance,
                                                                String serviceId, String planId, String appGuid);

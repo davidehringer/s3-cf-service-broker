@@ -28,8 +28,13 @@ import org.springframework.stereotype.Component;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.Bucket;
 import com.amazonaws.services.s3.model.BucketTaggingConfiguration;
+import com.amazonaws.services.s3.model.DeleteObjectRequest;
+import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.ObjectListing;
+import com.amazonaws.services.s3.model.PutObjectRequest;
+import com.amazonaws.services.s3.model.PutObjectResult;
 import com.amazonaws.services.s3.model.Region;
+import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.amazonaws.services.s3.model.S3VersionSummary;
 import com.amazonaws.services.s3.model.TagSet;
@@ -162,8 +167,27 @@ public class S3 {
         String planId = tagSet.getTag("planId");
         String organizationGuid = tagSet.getTag("organizationGuid");
         String spaceGuid = tagSet.getTag("spaceGuid");
-        ServiceInstance serviceInstance = new ServiceInstance(serviceInstanceId, serviceDefinitionId, planId,
-                organizationGuid, spaceGuid, null);
-        return serviceInstance;
+        return new ServiceInstance(serviceInstanceId, serviceDefinitionId, planId, organizationGuid, spaceGuid, null);
+    }
+
+    public boolean doesBucketExist(String bucket) {
+        return s3.doesBucketExist(bucket);
+    }
+
+    public Bucket createBucket(String bucket) {
+        logger.info("Creating shared bucket '{}' in region '{}'", bucket, region);
+        return s3.createBucket(bucket, region);
+    }
+
+    public S3Object getObject(GetObjectRequest getObjectRequest) {
+        return s3.getObject(getObjectRequest);
+    }
+
+    public PutObjectResult putObject(PutObjectRequest putObjectRequest) {
+        return s3.putObject(putObjectRequest);
+    }
+
+    public void deleteObject(DeleteObjectRequest deleteObjectRequest) {
+        s3.deleteObject(deleteObjectRequest);
     }
 }

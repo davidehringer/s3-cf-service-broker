@@ -121,10 +121,38 @@ public abstract class Iam {
         iam.deleteGroup(request);
     }
 
+    public User getUser(String username) {
+        GetUserRequest request = new GetUserRequest().withUserName(username);
+        try {
+            GetUserResult result = iam.getUser(request);
+            return result.getUser();
+        } catch (NoSuchEntityException e) {
+            logger.info("User '{}' doesn't exist (yet)!", username);
+            return null;
+        }
+    }
+
     public User createUser(String userName) {
         CreateUserRequest request = new CreateUserRequest(userName).withPath(userPath);
         CreateUserResult result = iam.createUser(request);
         return result.getUser();
+    }
+
+    public void applyUserPolicy(String userName, String policyName, String policyDocument) {
+        PutUserPolicyRequest request = new PutUserPolicyRequest().withUserName(userName).withPolicyDocument(policyDocument).withPolicyName(policyName);
+        logger.info("Applying policy document on user '{}': {}", userName, policyDocument);
+        iam.putUserPolicy(request);
+    }
+
+    public boolean doesUserPolicyExist(String userName, String policyName) {
+        GetUserPolicyRequest request = new GetUserPolicyRequest(userName, policyName);
+        try {
+            iam.getUserPolicy(request);
+            return true;
+        } catch (NoSuchEntityException e) {
+            logger.info("User policy '{}' for user '{}' doesn't exist (yet)!", policyName, userName);
+            return false;
+        }
     }
 
     /**

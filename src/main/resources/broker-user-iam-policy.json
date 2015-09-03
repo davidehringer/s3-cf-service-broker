@@ -28,11 +28,13 @@
         "iam:GetGroup",
         "iam:GetGroupPolicy",
         "iam:GetUser",
+        "iam:GetUserPolicy",
         "iam:ListAccessKeys",
         "iam:ListGroups",
         "iam:ListGroupsForUser",
         "iam:ListUsers",
         "iam:PutGroupPolicy",
+        "iam:PutUserPolicy",
         "iam:RemoveUserFromGroup",
         "iam:UpdateGroup",
         "iam:UpdateUser"

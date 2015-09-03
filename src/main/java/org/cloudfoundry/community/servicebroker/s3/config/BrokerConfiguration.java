@@ -24,6 +24,7 @@ import org.cloudfoundry.community.servicebroker.model.Catalog;
 import org.cloudfoundry.community.servicebroker.model.Plan;
 import org.cloudfoundry.community.servicebroker.model.ServiceDefinition;
 import org.cloudfoundry.community.servicebroker.s3.plan.basic.BasicPlan;
+import org.cloudfoundry.community.servicebroker.s3.plan.shared.SharedPlan;
 import org.cloudfoundry.community.servicebroker.s3.policy.BucketGroupPolicy;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -53,6 +54,13 @@ public class BrokerConfiguration {
     
     @Value("${AWS_SECRET_KEY}")
     private String secretKey;
+
+    @Value("${AWS_SHARED_BUCKET:}")
+    private String sharedBucket;
+
+    public String getSharedBucket() {
+        return sharedBucket;
+    }
 
     @Bean
     public AWSCredentials awsCredentials() {
@@ -102,6 +110,9 @@ public class BrokerConfiguration {
     private List<Plan> getPlans() {
         List<Plan> myPlans = new ArrayList<Plan>();
         myPlans.add(BasicPlan.getPlan());
+        if(!sharedBucket.isEmpty()) {
+            myPlans.add(SharedPlan.getPlan());
+        }
         return myPlans;
     }
 }

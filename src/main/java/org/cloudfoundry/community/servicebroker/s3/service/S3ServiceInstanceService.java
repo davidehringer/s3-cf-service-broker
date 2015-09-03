@@ -47,7 +47,7 @@ public class S3ServiceInstanceService implements ServiceInstanceService {
     @Override
     public ServiceInstance deleteServiceInstance(String id, String serviceId, String planId)
             throws ServiceBrokerException {
-        return plan.deleteServiceInstance(id);
+        return plan.deleteServiceInstance(id, serviceId, planId);
     }
 
     @Override

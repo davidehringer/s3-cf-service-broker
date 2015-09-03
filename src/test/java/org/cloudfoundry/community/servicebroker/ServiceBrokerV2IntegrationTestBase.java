@@ -62,7 +62,7 @@ public abstract class ServiceBrokerV2IntegrationTestBase {
     @Value("${service_id}")
     protected String serviceId;
 
-    @Value("${plan_id}")
+    @Value("${plan_id:s3-basic-plan}")
     protected String planId;
 
     protected final String username = "user";

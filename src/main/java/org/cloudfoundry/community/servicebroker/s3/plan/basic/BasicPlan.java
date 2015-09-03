@@ -34,7 +34,7 @@ import java.util.Map;
 
 @Component
 public class BasicPlan implements Plan {
-    public static final String PLAN_ID = "s3-basic-plan";
+    private static final String planId = "s3-basic-plan";
 
     private final BasicPlanIam iam;
     private final S3 s3;
@@ -46,7 +46,7 @@ public class BasicPlan implements Plan {
     }
 
     public static org.cloudfoundry.community.servicebroker.model.Plan getPlan() {
-        return new org.cloudfoundry.community.servicebroker.model.Plan(PLAN_ID, "basic", "An S3 plan providing a single bucket with unlimited storage.",
+        return new org.cloudfoundry.community.servicebroker.model.Plan(planId, "basic", "An S3 plan providing a single bucket with unlimited storage.",
                 getPlanMetadata());
     }
 

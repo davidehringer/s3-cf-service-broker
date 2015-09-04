@@ -34,7 +34,7 @@ import java.util.Map;
 
 @Component
 public class BasicPlan implements Plan {
-    private static final String planId = "s3-basic-plan";
+    public static final String planId = "s3-basic-plan";
 
     private final BasicPlanIam iam;
     private final S3 s3;

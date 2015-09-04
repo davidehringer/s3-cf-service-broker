@@ -42,7 +42,7 @@ import java.util.*;
 @Component
 public class SharedPlan implements Plan {
     private static final Logger logger = LoggerFactory.getLogger(SharedPlan.class);
-    private static final String planId = "s3-shared-plan";
+    public static final String planId = "s3-shared-plan";
     public static final String CONFIG_DIR = "config";
     public static final String CREDENTIALS_FILENAME = "shared_credentials";
     public static final String ENCRYPTION_ALGORITHM = "DESede";

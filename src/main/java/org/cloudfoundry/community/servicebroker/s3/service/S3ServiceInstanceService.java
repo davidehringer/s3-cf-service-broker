@@ -15,13 +15,16 @@
  */
 package org.cloudfoundry.community.servicebroker.s3.service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.cloudfoundry.community.servicebroker.exception.ServiceBrokerException;
 import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceExistsException;
 import org.cloudfoundry.community.servicebroker.model.ServiceDefinition;
 import org.cloudfoundry.community.servicebroker.model.ServiceInstance;
-import org.cloudfoundry.community.servicebroker.s3.plan.Plan;
+import org.cloudfoundry.community.servicebroker.s3.exception.UnsupportedPlanException;
+import org.cloudfoundry.community.servicebroker.s3.plan.basic.BasicPlan;
+import org.cloudfoundry.community.servicebroker.s3.plan.shared.SharedPlan;
 import org.cloudfoundry.community.servicebroker.service.ServiceInstanceService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -30,33 +33,50 @@ import org.springframework.stereotype.Service;
  * @author David Ehringer
  */
 @Service
-public class S3ServiceInstanceService implements ServiceInstanceService {
-    private final Plan plan;
+public class S3ServiceInstanceService extends S3ServiceInstanceBase implements ServiceInstanceService {
 
     @Autowired
-    public S3ServiceInstanceService(Plan plan) {
-        this.plan = plan;
+    public S3ServiceInstanceService(BasicPlan basicPlan, SharedPlan sharedPlan) {
+        this.basicPlan = basicPlan;
+        this.sharedPlan = sharedPlan;
     }
 
     @Override
     public ServiceInstance createServiceInstance(ServiceDefinition service, String serviceInstanceId, String planId,
             String organizationGuid, String spaceGuid) throws ServiceInstanceExistsException, ServiceBrokerException {
+        try {
+            plan = getPlan(planId);
+        } catch (UnsupportedPlanException e) {
+            throw new ServiceBrokerException(e.getMessage());
+        }
         return plan.createServiceInstance(service, serviceInstanceId, planId, organizationGuid, spaceGuid);
     }
 
     @Override
     public ServiceInstance deleteServiceInstance(String id, String serviceId, String planId)
             throws ServiceBrokerException {
+        try {
+            plan = getPlan(planId);
+        } catch (UnsupportedPlanException e) {
+            throw new ServiceBrokerException(e.getMessage());
+        }
         return plan.deleteServiceInstance(id, serviceId, planId);
     }
 
     @Override
     public List<ServiceInstance> getAllServiceInstances() {
-        return plan.getAllServiceInstances();
+        List<ServiceInstance> serviceInstances = new ArrayList<ServiceInstance>();
+        serviceInstances.addAll(basicPlan.getAllServiceInstances());
+        serviceInstances.addAll(sharedPlan.getAllServiceInstances());
+        return serviceInstances;
     }
 
     @Override
     public ServiceInstance getServiceInstance(String id) {
-        return plan.getServiceInstance(id);
+        ServiceInstance instance = basicPlan.getServiceInstance(id);
+        if (instance != null) {
+            return instance;
+        }
+        return sharedPlan.getServiceInstance(id);
     }
 }

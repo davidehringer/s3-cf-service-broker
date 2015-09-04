@@ -19,7 +19,9 @@ import org.cloudfoundry.community.servicebroker.exception.ServiceBrokerException
 import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceBindingExistsException;
 import org.cloudfoundry.community.servicebroker.model.ServiceInstance;
 import org.cloudfoundry.community.servicebroker.model.ServiceInstanceBinding;
-import org.cloudfoundry.community.servicebroker.s3.plan.Plan;
+import org.cloudfoundry.community.servicebroker.s3.exception.UnsupportedPlanException;
+import org.cloudfoundry.community.servicebroker.s3.plan.basic.BasicPlan;
+import org.cloudfoundry.community.servicebroker.s3.plan.shared.SharedPlan;
 import org.cloudfoundry.community.servicebroker.service.ServiceInstanceBindingService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -28,24 +30,34 @@ import org.springframework.stereotype.Service;
  * @author David Ehringer
  */
 @Service
-public class S3ServiceInstanceBindingService implements ServiceInstanceBindingService {
-    private final Plan plan;
+public class S3ServiceInstanceBindingService extends S3ServiceInstanceBase implements ServiceInstanceBindingService {
 
     @Autowired
-    public S3ServiceInstanceBindingService(Plan plan) {
-        this.plan = plan;
+    public S3ServiceInstanceBindingService(BasicPlan basicPlan, SharedPlan sharedPlan) {
+        this.basicPlan = basicPlan;
+        this.sharedPlan = sharedPlan;
     }
 
     @Override
     public ServiceInstanceBinding createServiceInstanceBinding(String bindingId, ServiceInstance serviceInstance,
             String serviceId, String planId, String appGuid) throws ServiceInstanceBindingExistsException,
             ServiceBrokerException {
+        try {
+            plan = getPlan(planId);
+        } catch (UnsupportedPlanException e) {
+            throw new ServiceBrokerException(e.getMessage());
+        }
         return plan.createServiceInstanceBinding(bindingId, serviceInstance, serviceId, planId, appGuid);
     }
 
     @Override
     public ServiceInstanceBinding deleteServiceInstanceBinding(String bindingId, ServiceInstance serviceInstance,
             String serviceId, String planId) throws ServiceBrokerException {
+        try {
+            plan = getPlan(planId);
+        } catch (UnsupportedPlanException e) {
+            throw new ServiceBrokerException(e.getMessage());
+        }
         return plan.deleteServiceInstanceBinding(bindingId, serviceInstance, serviceId, planId);
     }
 

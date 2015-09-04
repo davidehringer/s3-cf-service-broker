@@ -25,6 +25,7 @@ import org.cloudfoundry.community.servicebroker.model.Plan;
 import org.cloudfoundry.community.servicebroker.model.ServiceDefinition;
 import org.cloudfoundry.community.servicebroker.s3.plan.basic.BasicPlan;
 import org.cloudfoundry.community.servicebroker.s3.plan.shared.SharedPlan;
+import org.cloudfoundry.community.servicebroker.s3.plan.singlebucket.SingleBucketPlan;
 import org.cloudfoundry.community.servicebroker.s3.policy.BucketGroupPolicy;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -112,6 +113,7 @@ public class BrokerConfiguration {
         myPlans.add(BasicPlan.getPlan());
         if(!sharedBucket.isEmpty()) {
             myPlans.add(SharedPlan.getPlan());
+            myPlans.add(SingleBucketPlan.getPlan());
         }
         return myPlans;
     }

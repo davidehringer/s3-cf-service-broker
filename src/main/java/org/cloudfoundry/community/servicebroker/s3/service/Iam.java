@@ -155,6 +155,12 @@ public abstract class Iam {
         }
     }
 
+    public void deleteUserPolicy(String userName, String policyName) {
+        DeleteUserPolicyRequest request = new DeleteUserPolicyRequest().withUserName(userName).withPolicyName(policyName);
+        logger.info("Deleting policy document on user '{}'", userName);
+        iam.deleteUserPolicy(request);
+    }
+
     /**
      * The user must not be a member of any groups or have any access keys.
      *

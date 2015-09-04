@@ -22,6 +22,7 @@ import org.cloudfoundry.community.servicebroker.model.ServiceInstanceBinding;
 import org.cloudfoundry.community.servicebroker.s3.exception.UnsupportedPlanException;
 import org.cloudfoundry.community.servicebroker.s3.plan.basic.BasicPlan;
 import org.cloudfoundry.community.servicebroker.s3.plan.shared.SharedPlan;
+import org.cloudfoundry.community.servicebroker.s3.plan.singlebucket.SingleBucketPlan;
 import org.cloudfoundry.community.servicebroker.service.ServiceInstanceBindingService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -33,9 +34,10 @@ import org.springframework.stereotype.Service;
 public class S3ServiceInstanceBindingService extends S3ServiceInstanceBase implements ServiceInstanceBindingService {
 
     @Autowired
-    public S3ServiceInstanceBindingService(BasicPlan basicPlan, SharedPlan sharedPlan) {
+    public S3ServiceInstanceBindingService(BasicPlan basicPlan, SharedPlan sharedPlan, SingleBucketPlan singleBucketPlan) {
         this.basicPlan = basicPlan;
         this.sharedPlan = sharedPlan;
+        this.singleBucketPlan = singleBucketPlan;
     }
 
     @Override

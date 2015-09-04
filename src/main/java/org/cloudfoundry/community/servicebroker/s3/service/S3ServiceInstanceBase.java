@@ -19,10 +19,12 @@ import org.cloudfoundry.community.servicebroker.s3.exception.UnsupportedPlanExce
 import org.cloudfoundry.community.servicebroker.s3.plan.Plan;
 import org.cloudfoundry.community.servicebroker.s3.plan.basic.BasicPlan;
 import org.cloudfoundry.community.servicebroker.s3.plan.shared.SharedPlan;
+import org.cloudfoundry.community.servicebroker.s3.plan.singlebucket.SingleBucketPlan;
 
 public class S3ServiceInstanceBase {
     protected BasicPlan basicPlan;
     protected SharedPlan sharedPlan;
+    protected SingleBucketPlan singleBucketPlan;
     protected Plan plan;
 
     protected Plan getPlan(String planId) throws UnsupportedPlanException {
@@ -30,6 +32,8 @@ public class S3ServiceInstanceBase {
             return basicPlan;
         } else if (planId.equals(SharedPlan.planId)) {
             return sharedPlan;
+        } else if (planId.equals(SingleBucketPlan.planId)) {
+            return singleBucketPlan;
         } else throw new UnsupportedPlanException(String.format("Unsupported plan: '%s'", planId));
     }
 }

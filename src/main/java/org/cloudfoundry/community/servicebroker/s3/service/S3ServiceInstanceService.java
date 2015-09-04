@@ -25,6 +25,7 @@ import org.cloudfoundry.community.servicebroker.model.ServiceInstance;
 import org.cloudfoundry.community.servicebroker.s3.exception.UnsupportedPlanException;
 import org.cloudfoundry.community.servicebroker.s3.plan.basic.BasicPlan;
 import org.cloudfoundry.community.servicebroker.s3.plan.shared.SharedPlan;
+import org.cloudfoundry.community.servicebroker.s3.plan.singlebucket.SingleBucketPlan;
 import org.cloudfoundry.community.servicebroker.service.ServiceInstanceService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -36,9 +37,10 @@ import org.springframework.stereotype.Service;
 public class S3ServiceInstanceService extends S3ServiceInstanceBase implements ServiceInstanceService {
 
     @Autowired
-    public S3ServiceInstanceService(BasicPlan basicPlan, SharedPlan sharedPlan) {
+    public S3ServiceInstanceService(BasicPlan basicPlan, SharedPlan sharedPlan, SingleBucketPlan singleBucketPlan) {
         this.basicPlan = basicPlan;
         this.sharedPlan = sharedPlan;
+        this.singleBucketPlan = singleBucketPlan;
     }
 
     @Override
@@ -68,15 +70,21 @@ public class S3ServiceInstanceService extends S3ServiceInstanceBase implements S
         List<ServiceInstance> serviceInstances = new ArrayList<ServiceInstance>();
         serviceInstances.addAll(basicPlan.getAllServiceInstances());
         serviceInstances.addAll(sharedPlan.getAllServiceInstances());
+        serviceInstances.addAll(singleBucketPlan.getAllServiceInstances());
         return serviceInstances;
     }
 
     @Override
     public ServiceInstance getServiceInstance(String id) {
-        ServiceInstance instance = basicPlan.getServiceInstance(id);
+        ServiceInstance instance = null;
+        instance = basicPlan.getServiceInstance(id);
         if (instance != null) {
             return instance;
         }
-        return sharedPlan.getServiceInstance(id);
+        instance = sharedPlan.getServiceInstance(id);
+        if (instance != null) {
+            return instance;
+        }
+        return singleBucketPlan.getServiceInstance(id);
     }
 }

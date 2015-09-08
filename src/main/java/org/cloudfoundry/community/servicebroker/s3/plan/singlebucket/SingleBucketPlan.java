@@ -42,8 +42,6 @@ public class SingleBucketPlan implements Plan {
     private static final Logger logger = LoggerFactory.getLogger(SingleBucketPlan.class);
     public static final String planId = "s3-singlebucket-plan";
     public static final String CONFIG_DIR = "config";
-    public static final String ENCRYPTION_ALGORITHM = "DESede";
-    public static final String ENCRYPTION_KEY_ID = "generated";
 
     private final BrokerConfiguration brokerConfiguration;
     private final SingleBucketPlanIam iam;
@@ -110,9 +108,7 @@ public class SingleBucketPlan implements Plan {
                                                  String organizationGuid, String spaceGuid) {
         ensureSharedBucket();
 
-        S3ServiceInstanceEncryptionKey encryptionKey = new S3ServiceInstanceEncryptionKey(ENCRYPTION_KEY_ID, ENCRYPTION_ALGORITHM);
-        encryptionKey.generateSecretKey();
-        S3ServiceInstanceConfigObject configObject = new S3ServiceInstanceConfigObject(organizationGuid, spaceGuid, Arrays.asList(encryptionKey));
+        S3ServiceInstanceConfigObject configObject = new S3ServiceInstanceConfigObject(organizationGuid, spaceGuid, null);
         logger.info("Creating Service Instance Config Object in: s3://{}/{}", brokerConfiguration.getSharedBucket(), getInstanceConfigPath(serviceInstanceId));
         putObjectToJSONOnS3(getInstanceConfigPath(serviceInstanceId), configObject);
 
@@ -141,10 +137,6 @@ public class SingleBucketPlan implements Plan {
         credentials.put("access_key_id", accessKey.getAccessKeyId());
         credentials.put("secret_access_key", accessKey.getSecretAccessKey());
         credentials.put("key_suffix", key_suffix);
-
-        S3ServiceInstanceConfigObject configObject = getObjectFromJSONOnS3(brokerConfiguration.getSharedBucket(),
-                getInstanceConfigPath(serviceInstance.getId()), S3ServiceInstanceConfigObject.class);
-        credentials.put("encryption_keys", configObject.getEncryptionKeys());
 
         return new ServiceInstanceBinding(bindingId, serviceInstance.getId(), credentials, null, appGuid);
     }

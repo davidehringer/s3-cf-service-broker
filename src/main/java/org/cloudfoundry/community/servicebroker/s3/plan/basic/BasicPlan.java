@@ -60,6 +60,7 @@ public class BasicPlan implements Plan {
         return Arrays.asList("Single S3 bucket", "Unlimited storage", "Unlimited number of objects");
     }
 
+    @Override
     public ServiceInstance createServiceInstance(ServiceDefinition service, String serviceInstanceId, String planId,
                                                  String organizationGuid, String spaceGuid) {
         Bucket bucket = s3.createBucketForInstance(serviceInstanceId, service, planId, organizationGuid, spaceGuid);
@@ -68,6 +69,7 @@ public class BasicPlan implements Plan {
         return new ServiceInstance(serviceInstanceId, service.getId(), planId, organizationGuid, spaceGuid, null);
     }
 
+    @Override
     public ServiceInstance deleteServiceInstance(String id, String serviceId, String planId) {
         ServiceInstance instance = s3.findServiceInstance(id);
         // TODO we need to make these deletes idempotent so we can handle retries on error
@@ -78,6 +80,7 @@ public class BasicPlan implements Plan {
         return instance;
     }
 
+    @Override
     public ServiceInstanceBinding createServiceInstanceBinding(String bindingId, ServiceInstance serviceInstance,
                                                                String serviceId, String planId, String appGuid) {
         User user = iam.createUserForBinding(bindingId);
@@ -93,6 +96,7 @@ public class BasicPlan implements Plan {
         return new ServiceInstanceBinding(bindingId, serviceInstance.getId(), credentials, null, appGuid);
     }
 
+    @Override
     public ServiceInstanceBinding deleteServiceInstanceBinding(String bindingId, ServiceInstance serviceInstance,
                                                                String serviceId, String planId) throws ServiceBrokerException {
         // TODO make operations idempotent so we can handle retries on error
@@ -102,10 +106,12 @@ public class BasicPlan implements Plan {
         return new ServiceInstanceBinding(bindingId, serviceInstance.getId(), null, null, null);
     }
 
+    @Override
     public List<ServiceInstance> getAllServiceInstances() {
         return s3.getAllServiceInstances();
     }
 
+    @Override
     public ServiceInstance getServiceInstance(String id) {
         return s3.findServiceInstance(id);
     }

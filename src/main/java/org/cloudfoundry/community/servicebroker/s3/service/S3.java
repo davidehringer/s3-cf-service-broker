@@ -179,6 +179,16 @@ public class S3 {
         return s3.createBucket(bucket, region);
     }
 
+    /**
+     * Caution: S3Object opens a connection for each object.
+     * These connections are not liberated even if the object is garbage collected,
+     * so it is needed to execute either use Try-with-resources (preferred)
+     * or manually call object.close() in order to liberate the connection to the pool.
+     * Failing to do so will result in AmazonClientException: ConnectionPoolTimeoutException.
+     *
+     * @param getObjectRequest
+     * @return Returns the requested {@link S3Object}.
+     */
     public S3Object getObject(GetObjectRequest getObjectRequest) {
         return s3.getObject(getObjectRequest);
     }

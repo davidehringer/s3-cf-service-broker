@@ -85,7 +85,7 @@ public class SharedPlan implements Plan {
             if ("NoSuchKey".equals(e.getErrorCode())) {
                 logger.error("The S3 object '{}/{}' doesn't exist.", bucket, path);
             } else {
-                logger.error("Undefined error on getJSONFromS3Object()", e);
+                logger.error("Undefined error on getObjectFromS3()", e);
             }
         }
         return null;
@@ -102,9 +102,12 @@ public class SharedPlan implements Plan {
     }
 
     private <T> T getObjectFromJSONOnS3(String bucket, String path, Class<T> returnObject) {
-        S3Object s3object = getObjectFromS3(bucket, path);
-        if(s3object != null) {
-            return readObjectFromS3Object(s3object, returnObject);
+        try (S3Object s3object = getObjectFromS3(bucket, path)) {
+            if (s3object != null) {
+                return readObjectFromS3Object(s3object, returnObject);
+            }
+        } catch (IOException e) {
+            logger.error("IOException on getObjectFromJSONOnS3()", e);
         }
         return null;
     }
@@ -146,15 +149,17 @@ public class SharedPlan implements Plan {
 
     private SharedCredentials getSharedCredentialsFromBucket() {
         String sharedCredentialsPath = String.format("%s/%s", CONFIG_DIR, CREDENTIALS_FILENAME);
-        AmazonS3 s3client = brokerConfiguration.amazonS3();
-        S3Object sharedCredentials = s3client.getObject(new GetObjectRequest(brokerConfiguration.getSharedBucket(), sharedCredentialsPath));
-        if (sharedCredentials != null) {
-            ObjectMapper mapper = new ObjectMapper();
-            try {
-                return mapper.readValue(new InputStreamReader(sharedCredentials.getObjectContent()), SharedCredentials.class);
-            } catch (IOException e) {
-                logger.error("Could not read shared credentials from S3 bucket.", e);
+        try (S3Object sharedCredentials = s3.getObject(new GetObjectRequest(brokerConfiguration.getSharedBucket(), sharedCredentialsPath))) {
+            if (sharedCredentials != null) {
+                ObjectMapper mapper = new ObjectMapper();
+                try {
+                    return mapper.readValue(new InputStreamReader(sharedCredentials.getObjectContent()), SharedCredentials.class);
+                } catch (IOException e) {
+                    logger.error("Could not read shared credentials from S3 bucket.", e);
+                }
             }
+        } catch (IOException e) {
+            logger.error("IOException on getSharedCredentialsFromBucket()", e);
         }
         return null;
     }
@@ -232,11 +237,13 @@ public class SharedPlan implements Plan {
     @Override
     public ServiceInstance getServiceInstance(String id) {
         String instanceConfigPath = getInstanceConfigPath(id);
-        S3Object s3Object = s3.getObject(new GetObjectRequest(brokerConfiguration.getSharedBucket(), instanceConfigPath));
-        if (s3Object != null) {
-            return new ServiceInstance(id, null, planId, null, null, null);
-        } else {
-            return null;
+        try (S3Object s3Object = s3.getObject(new GetObjectRequest(brokerConfiguration.getSharedBucket(), instanceConfigPath))) {
+            if (s3Object != null) {
+                return new ServiceInstance(id, null, planId, null, null, null);
+            }
+        } catch (IOException e) {
+            logger.error("IOException on getServiceInstance()", e);
         }
+        return null;
     }
 }

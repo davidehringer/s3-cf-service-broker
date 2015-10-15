@@ -33,6 +33,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -160,11 +161,13 @@ public class SingleBucketPlan implements Plan {
     @Override
     public ServiceInstance getServiceInstance(String id) {
         String instanceConfigPath = getInstanceConfigPath(id);
-        S3Object s3Object = s3.getObject(new GetObjectRequest(brokerConfiguration.getSharedBucket(), instanceConfigPath));
-        if (s3Object != null) {
-            return new ServiceInstance(id, null, planId, null, null, null);
-        } else {
-            return null;
+        try (S3Object s3Object = s3.getObject(new GetObjectRequest(brokerConfiguration.getSharedBucket(), instanceConfigPath))) {
+            if (s3Object != null) {
+                return new ServiceInstance(id, null, planId, null, null, null);
+            }
+        } catch (IOException e) {
+            logger.error("IOException on getServiceInstance()", e);
         }
+        return null;
     }
 }

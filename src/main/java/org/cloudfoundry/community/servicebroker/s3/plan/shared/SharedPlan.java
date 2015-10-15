@@ -149,8 +149,7 @@ public class SharedPlan implements Plan {
 
     private SharedCredentials getSharedCredentialsFromBucket() {
         String sharedCredentialsPath = String.format("%s/%s", CONFIG_DIR, CREDENTIALS_FILENAME);
-        AmazonS3 s3client = brokerConfiguration.amazonS3();
-        try (S3Object sharedCredentials = s3client.getObject(new GetObjectRequest(brokerConfiguration.getSharedBucket(), sharedCredentialsPath))) {
+        try (S3Object sharedCredentials = s3.getObject(new GetObjectRequest(brokerConfiguration.getSharedBucket(), sharedCredentialsPath))) {
             if (sharedCredentials != null) {
                 ObjectMapper mapper = new ObjectMapper();
                 try {

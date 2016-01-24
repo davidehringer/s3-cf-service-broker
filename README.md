@@ -110,6 +110,15 @@ Note: The S3 policies could be more limited based on what is actually used.
 
 ### Basic Plan
 
+The the following attributes of the service and plan can be configured:
+
+Environment Variable         | Default
+-----------------------------|-------------
+`SERVICE_ID`                 | `s3`
+`SERVICE_NAME`               | `amazon-s3`
+`PLAN_ID`                    | `s3-basic-plan`
+`PLAN_NAME`                  | `basic`
+
 A service provisioning call will create an S3 bucket, an IAM group, and an IAM Policy to provide access controls on the bucket. A binding call will create an IAM user, generate access keys, and add it to the bucket's group. Unbinding and deprovisioning calls will delete all resources created.
 
 The following names are used and can be customized with a prefix:
@@ -146,6 +155,86 @@ The ability to apply additional custom tags is in the works.
 ## Registering a Broker with the Cloud Controller
 
 See [Managing Service Brokers](http://docs.cloudfoundry.org/services/managing-service-brokers.html).
+
+### Registering a private broker
+
+If you do not have administrator credentials for your Cloud Foundry, such as public [Pivotal Web Services](https://run.pivotal.io), then you can deploy and register this broker in any Space to which you have developer access.
+
+Build the jar file to be deployed:
+
+```
+mvn package -DskipTests
+```
+
+Configure your AWS credentials (or setup a `.envrc` if you use `direnv allow`):
+
+```
+export AWS_ACCESS_KEY=XXXXX
+export AWS_SECRET_KEY=YYYYY
+export SECURITY_USER_NAME=myuser
+export SECURITY_USER_PASSWORD=mypassword
+export APPNAME=s3-broker
+```
+
+Copy and paste the following:
+
+```
+ORG=$(cf t | grep Org: | awk '{print $2}')
+SPACE=$(cf t | grep Space: | awk '{print $2}')
+cat >my-manifest.yml <<EOS
+---
+applications:
+  - name: $APPNAME
+    buildpack: java_buildpack
+    path: $(ls target/*.jar)
+    host: $APPNAME-$ORG-$SPACE
+    memory: 512M
+    env:
+      SERVICE_ID: $(uuid)
+      PLAN_ID: $(uuid)
+      SERVICE_NAME: $APPNAME-$ORG-$SPACE
+      AWS_ACCESS_KEY: $AWS_ACCESS_KEY
+      AWS_SECRET_KEY: $AWS_SECRET_KEY
+      SECURITY_USER_NAME: $SECURITY_USER_NAME
+      SECURITY_USER_PASSWORD: $SECURITY_USER_PASSWORD
+EOS
+
+cf push -f my-manifest.yml
+```
+
+Now the broker can be confirmed to be running:
+
+```
+BROKER_URL=$(cf app $APPNAME  | grep urls: | awk '{print $2}')
+curl https://$SECURITY_USER_NAME:$SECURITY_USER_PASSWORD@$BROKER_URL/v2/catalog
+```
+
+Now, register the broker as a private space-only broker:
+
+```
+brew install jq
+SPACE_GUID=$(cat ~/.cf/config.json | jq -r .SpaceFields.Guid)
+cf curl -X POST /v2/service_brokers -d "{  
+  \"broker_url\": \"https://${BROKER_URL}\",
+  \"space_guid\": \"${SPACE_GUID}\",
+  \"name\": \"$APPNAME-$ORG-$SPACE\",
+  \"auth_username\": \"$SECURITY_USER_NAME\",
+  \"auth_password\": \"$SECURITY_USER_PASSWORD\"
+}"
+```
+
+Confirm that the broker is registered:
+
+```
+cf service-brokers
+cf marketplace
+```
+
+Anyone with developer access to this Space can create/bind/unbind/deprovision AWS S3 buckets now:
+
+```
+cf create-service $APPNAME-$ORG-$SPACE basic my-bucket
+```
 
 ## Testing
 

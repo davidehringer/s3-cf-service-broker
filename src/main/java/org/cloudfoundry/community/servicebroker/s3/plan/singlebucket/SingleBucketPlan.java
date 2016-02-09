@@ -20,9 +20,7 @@ import com.amazonaws.services.identitymanagement.model.User;
 import com.amazonaws.services.s3.model.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.cloudfoundry.community.servicebroker.model.ServiceDefinition;
-import org.cloudfoundry.community.servicebroker.model.ServiceInstance;
-import org.cloudfoundry.community.servicebroker.model.ServiceInstanceBinding;
+import org.cloudfoundry.community.servicebroker.model.*;
 import org.cloudfoundry.community.servicebroker.s3.config.BrokerConfiguration;
 import org.cloudfoundry.community.servicebroker.s3.config.s3.S3ServiceInstanceConfigObject;
 import org.cloudfoundry.community.servicebroker.s3.plan.Plan;
@@ -105,31 +103,36 @@ public class SingleBucketPlan implements Plan {
     }
 
     @Override
-    public ServiceInstance createServiceInstance(ServiceDefinition service, String serviceInstanceId, String planId,
-                                                 String organizationGuid, String spaceGuid) {
+    public ServiceInstance createServiceInstance(CreateServiceInstanceRequest createServiceInstanceRequest) {
+        String organizationGuid = createServiceInstanceRequest.getOrganizationGuid();
+        String spaceGuid = createServiceInstanceRequest.getSpaceGuid();
+        String serviceInstanceId = createServiceInstanceRequest.getServiceInstanceId();
         ensureSharedBucket();
 
         S3ServiceInstanceConfigObject configObject = new S3ServiceInstanceConfigObject(organizationGuid, spaceGuid, null);
         logger.info("Creating Service Instance Config Object in: s3://{}/{}", brokerConfiguration.getSharedBucket(), getInstanceConfigPath(serviceInstanceId));
         putObjectToJSONOnS3(getInstanceConfigPath(serviceInstanceId), configObject);
 
-        return new ServiceInstance(serviceInstanceId, service.getId(), planId, organizationGuid, spaceGuid, null);
+        return new ServiceInstance(createServiceInstanceRequest);
     }
 
     @Override
-    public ServiceInstance deleteServiceInstance(String id, String serviceId, String planId) {
-        String instanceConfigPath = getInstanceConfigPath(id);
+    public ServiceInstance deleteServiceInstance(DeleteServiceInstanceRequest deleteServiceInstanceRequest) {
+        String serviceInstanceId = deleteServiceInstanceRequest.getServiceInstanceId();
+        String instanceConfigPath = getInstanceConfigPath(serviceInstanceId);
         s3.deleteObject(new DeleteObjectRequest(brokerConfiguration.getSharedBucket(), instanceConfigPath));
-        return new ServiceInstance(id, serviceId, planId, null, null, null);
+        return new ServiceInstance(deleteServiceInstanceRequest);
     }
 
     @Override
-    public ServiceInstanceBinding createServiceInstanceBinding(String bindingId, ServiceInstance serviceInstance,
-                                                               String serviceId, String planId, String appGuid) {
+    public ServiceInstanceBinding createServiceInstanceBinding(CreateServiceInstanceBindingRequest createServiceInstanceBindingRequest) {
+        String bindingId = createServiceInstanceBindingRequest.getBindingId();
+        String serviceInstanceId = createServiceInstanceBindingRequest.getServiceInstanceId();
+        String appGuid = createServiceInstanceBindingRequest.getAppGuid();
         User user = iam.createUserForBinding(bindingId);
         AccessKey accessKey = iam.createAccessKey(user);
 
-        String key_suffix = String.format("%s%s", "_", serviceInstance.getId());
+        String key_suffix = String.format("%s%s", "_", serviceInstanceId);
         createUserBucketPolicy(user.getUserName(), key_suffix);
 
         Map<String, Object> credentials = new HashMap<String, Object>();
@@ -139,17 +142,17 @@ public class SingleBucketPlan implements Plan {
         credentials.put("secret_access_key", accessKey.getSecretAccessKey());
         credentials.put("key_suffix", key_suffix);
 
-        return new ServiceInstanceBinding(bindingId, serviceInstance.getId(), credentials, null, appGuid);
+        return new ServiceInstanceBinding(bindingId, serviceInstanceId, credentials, null, appGuid);
     }
 
     @Override
-    public ServiceInstanceBinding deleteServiceInstanceBinding(String bindingId, ServiceInstance serviceInstance,
-                                                               String serviceId, String planId) {
-
+    public ServiceInstanceBinding deleteServiceInstanceBinding(DeleteServiceInstanceBindingRequest deleteServiceInstanceBindingRequest) {
+        String bindingId = deleteServiceInstanceBindingRequest.getBindingId();
+        String serviceInstanceId = deleteServiceInstanceBindingRequest.getInstance().getServiceInstanceId();
         deleteUserBucketPolicy(iam.getUserNameForBinding(bindingId));
         iam.deleteUserAccessKeysForBinding(bindingId);
         iam.deleteUserForBinding(bindingId);
-        return new ServiceInstanceBinding(bindingId, serviceInstance.getId(), null, null, null);
+        return new ServiceInstanceBinding(bindingId, serviceInstanceId, null, null, null);
     }
 
     // TODO needs to be implemented
@@ -163,7 +166,8 @@ public class SingleBucketPlan implements Plan {
         String instanceConfigPath = getInstanceConfigPath(id);
         try (S3Object s3Object = s3.getObject(new GetObjectRequest(brokerConfiguration.getSharedBucket(), instanceConfigPath))) {
             if (s3Object != null) {
-                return new ServiceInstance(id, null, planId, null, null, null);
+                CreateServiceInstanceRequest wrapper = new CreateServiceInstanceRequest(null, planId, null, null, null).withServiceInstanceId(id);
+                return new ServiceInstance(wrapper);
             }
         } catch (IOException e) {
             logger.error("IOException on getServiceInstance()", e);

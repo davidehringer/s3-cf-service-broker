@@ -17,7 +17,8 @@ package org.cloudfoundry.community.servicebroker.s3.service;
 
 import org.cloudfoundry.community.servicebroker.exception.ServiceBrokerException;
 import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceBindingExistsException;
-import org.cloudfoundry.community.servicebroker.model.ServiceInstance;
+import org.cloudfoundry.community.servicebroker.model.CreateServiceInstanceBindingRequest;
+import org.cloudfoundry.community.servicebroker.model.DeleteServiceInstanceBindingRequest;
 import org.cloudfoundry.community.servicebroker.model.ServiceInstanceBinding;
 import org.cloudfoundry.community.servicebroker.s3.exception.UnsupportedPlanException;
 import org.cloudfoundry.community.servicebroker.s3.plan.basic.BasicPlan;
@@ -41,30 +42,24 @@ public class S3ServiceInstanceBindingService extends S3ServiceInstanceBase imple
     }
 
     @Override
-    public ServiceInstanceBinding createServiceInstanceBinding(String bindingId, ServiceInstance serviceInstance,
-            String serviceId, String planId, String appGuid) throws ServiceInstanceBindingExistsException,
-            ServiceBrokerException {
+    public ServiceInstanceBinding createServiceInstanceBinding(CreateServiceInstanceBindingRequest createServiceInstanceBindingRequest)
+            throws ServiceInstanceBindingExistsException, ServiceBrokerException {
         try {
-            plan = getPlan(planId);
+            plan = getPlan(createServiceInstanceBindingRequest.getPlanId());
         } catch (UnsupportedPlanException e) {
             throw new ServiceBrokerException(e.getMessage());
         }
-        return plan.createServiceInstanceBinding(bindingId, serviceInstance, serviceId, planId, appGuid);
+        return plan.createServiceInstanceBinding(createServiceInstanceBindingRequest);
     }
 
     @Override
-    public ServiceInstanceBinding deleteServiceInstanceBinding(String bindingId, ServiceInstance serviceInstance,
-            String serviceId, String planId) throws ServiceBrokerException {
+    public ServiceInstanceBinding deleteServiceInstanceBinding(DeleteServiceInstanceBindingRequest deleteServiceInstanceBindingRequest)
+            throws ServiceBrokerException {
         try {
-            plan = getPlan(planId);
+            plan = getPlan(deleteServiceInstanceBindingRequest.getPlanId());
         } catch (UnsupportedPlanException e) {
             throw new ServiceBrokerException(e.getMessage());
         }
-        return plan.deleteServiceInstanceBinding(bindingId, serviceInstance, serviceId, planId);
-    }
-
-    @Override
-    public ServiceInstanceBinding getServiceInstanceBinding(String id) {
-        throw new IllegalStateException("Not implemented");
+        return plan.deleteServiceInstanceBinding(deleteServiceInstanceBindingRequest);
     }
 }

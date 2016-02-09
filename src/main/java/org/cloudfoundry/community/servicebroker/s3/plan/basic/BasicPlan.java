@@ -19,9 +19,7 @@ import com.amazonaws.services.identitymanagement.model.AccessKey;
 import com.amazonaws.services.identitymanagement.model.User;
 import com.amazonaws.services.s3.model.Bucket;
 import org.cloudfoundry.community.servicebroker.exception.ServiceBrokerException;
-import org.cloudfoundry.community.servicebroker.model.ServiceDefinition;
-import org.cloudfoundry.community.servicebroker.model.ServiceInstance;
-import org.cloudfoundry.community.servicebroker.model.ServiceInstanceBinding;
+import org.cloudfoundry.community.servicebroker.model.*;
 import org.cloudfoundry.community.servicebroker.s3.plan.Plan;
 import org.cloudfoundry.community.servicebroker.s3.service.S3;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -61,49 +59,57 @@ public class BasicPlan implements Plan {
     }
 
     @Override
-    public ServiceInstance createServiceInstance(ServiceDefinition service, String serviceInstanceId, String planId,
-                                                 String organizationGuid, String spaceGuid) {
-        Bucket bucket = s3.createBucketForInstance(serviceInstanceId, service, planId, organizationGuid, spaceGuid);
+    public ServiceInstance createServiceInstance(CreateServiceInstanceRequest createServiceInstanceRequest) {
+        String serviceInstanceId = createServiceInstanceRequest.getServiceInstanceId();
+        String serviceDefinitionId = createServiceInstanceRequest.getServiceDefinitionId();
+        String organizationGuid = createServiceInstanceRequest.getOrganizationGuid();
+        String spaceGuid = createServiceInstanceRequest.getSpaceGuid();
+        Bucket bucket = s3.createBucketForInstance(serviceInstanceId, serviceDefinitionId, planId, organizationGuid, spaceGuid);
         iam.createGroupForInstance(serviceInstanceId, bucket.getName());
         iam.applyGroupPolicyForInstance(serviceInstanceId, bucket.getName());
-        return new ServiceInstance(serviceInstanceId, service.getId(), planId, organizationGuid, spaceGuid, null);
+        return new ServiceInstance(createServiceInstanceRequest);
     }
 
     @Override
-    public ServiceInstance deleteServiceInstance(String id, String serviceId, String planId) {
-        ServiceInstance instance = s3.findServiceInstance(id);
+    public ServiceInstance deleteServiceInstance(DeleteServiceInstanceRequest deleteServiceInstanceRequest) {
+        String serviceInstanceId = deleteServiceInstanceRequest.getServiceInstanceId();
+        ServiceInstance instance = s3.findServiceInstance(serviceInstanceId);
         // TODO we need to make these deletes idempotent so we can handle retries on error
-        iam.deleteGroupPolicyForInstance(id);
-        iam.deleteGroupForInstance(id);
-        s3.emptyBucket(id);
-        s3.deleteBucket(id);
+        iam.deleteGroupPolicyForInstance(serviceInstanceId);
+        iam.deleteGroupForInstance(serviceInstanceId);
+        s3.emptyBucket(serviceInstanceId);
+        s3.deleteBucket(serviceInstanceId);
         return instance;
     }
 
     @Override
-    public ServiceInstanceBinding createServiceInstanceBinding(String bindingId, ServiceInstance serviceInstance,
-                                                               String serviceId, String planId, String appGuid) {
+    public ServiceInstanceBinding createServiceInstanceBinding(CreateServiceInstanceBindingRequest createServiceInstanceBindingRequest) {
+        String bindingId = createServiceInstanceBindingRequest.getBindingId();
+        String serviceInstanceId = createServiceInstanceBindingRequest.getServiceInstanceId();
+        String appGuid = createServiceInstanceBindingRequest.getAppGuid();
         User user = iam.createUserForBinding(bindingId);
         AccessKey accessKey = iam.createAccessKey(user);
         // TODO create password and add to credentials
-        iam.addUserToGroup(user, iam.getGroupNameForInstance(serviceInstance.getId()));
+        iam.addUserToGroup(user, iam.getGroupNameForInstance(serviceInstanceId));
 
         Map<String, Object> credentials = new HashMap<String, Object>();
-        credentials.put("bucket", s3.getBucketNameForInstance(serviceInstance.getId()));
+        credentials.put("bucket", s3.getBucketNameForInstance(serviceInstanceId));
         credentials.put("username", user.getUserName());
         credentials.put("access_key_id", accessKey.getAccessKeyId());
         credentials.put("secret_access_key", accessKey.getSecretAccessKey());
-        return new ServiceInstanceBinding(bindingId, serviceInstance.getId(), credentials, null, appGuid);
+        return new ServiceInstanceBinding(bindingId, serviceInstanceId, credentials, null, appGuid);
     }
 
     @Override
-    public ServiceInstanceBinding deleteServiceInstanceBinding(String bindingId, ServiceInstance serviceInstance,
-                                                               String serviceId, String planId) throws ServiceBrokerException {
+    public ServiceInstanceBinding deleteServiceInstanceBinding(DeleteServiceInstanceBindingRequest deleteServiceInstanceBindingRequest)
+            throws ServiceBrokerException {
+        String bindingId = deleteServiceInstanceBindingRequest.getBindingId();
+        String serviceInstanceId = deleteServiceInstanceBindingRequest.getInstance().getServiceInstanceId();
         // TODO make operations idempotent so we can handle retries on error
-        iam.removeUserFromGroupForInstance(bindingId, serviceInstance.getId());
+        iam.removeUserFromGroupForInstance(bindingId, serviceInstanceId);
         iam.deleteUserAccessKeysForBinding(bindingId);
         iam.deleteUserForBinding(bindingId);
-        return new ServiceInstanceBinding(bindingId, serviceInstance.getId(), null, null, null);
+        return new ServiceInstanceBinding(bindingId, serviceInstanceId, null, null, null);
     }
 
     @Override

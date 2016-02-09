@@ -15,9 +15,10 @@
  */
 package org.cloudfoundry.community.servicebroker.s3.service;
 
-import java.util.List;
-
-import org.cloudfoundry.community.servicebroker.model.ServiceDefinition;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.model.*;
+import com.google.common.collect.Lists;
+import org.cloudfoundry.community.servicebroker.model.CreateServiceInstanceRequest;
 import org.cloudfoundry.community.servicebroker.model.ServiceInstance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,21 +26,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.model.Bucket;
-import com.amazonaws.services.s3.model.BucketTaggingConfiguration;
-import com.amazonaws.services.s3.model.DeleteObjectRequest;
-import com.amazonaws.services.s3.model.GetObjectRequest;
-import com.amazonaws.services.s3.model.ObjectListing;
-import com.amazonaws.services.s3.model.PutObjectRequest;
-import com.amazonaws.services.s3.model.PutObjectResult;
-import com.amazonaws.services.s3.model.Region;
-import com.amazonaws.services.s3.model.S3Object;
-import com.amazonaws.services.s3.model.S3ObjectSummary;
-import com.amazonaws.services.s3.model.S3VersionSummary;
-import com.amazonaws.services.s3.model.TagSet;
-import com.amazonaws.services.s3.model.VersionListing;
-import com.google.common.collect.Lists;
+import java.util.List;
 
 /**
  * @author David Ehringer
@@ -60,7 +47,7 @@ public class S3 {
         this.region = region;
     }
 
-    public Bucket createBucketForInstance(String instanceId, ServiceDefinition service, String planId,
+    public Bucket createBucketForInstance(String instanceId, String serviceDefinitionId, String planId,
             String organizationGuid, String spaceGuid) {
         String bucketName = getBucketNameForInstance(instanceId);
         logger.info("Creating bucket '{}' for serviceInstanceId '{}'", bucketName, instanceId);
@@ -70,7 +57,7 @@ public class S3 {
         BucketTaggingConfiguration bucketTaggingConfiguration = new BucketTaggingConfiguration();
         TagSet tagSet = new TagSet();
         tagSet.setTag("serviceInstanceId", instanceId);
-        tagSet.setTag("serviceDefinitionId", service.getId());
+        tagSet.setTag("serviceDefinitionId", serviceDefinitionId);
         tagSet.setTag("planId", planId);
         tagSet.setTag("organizationGuid", organizationGuid);
         tagSet.setTag("spaceGuid", spaceGuid);
@@ -167,7 +154,8 @@ public class S3 {
         String planId = tagSet.getTag("planId");
         String organizationGuid = tagSet.getTag("organizationGuid");
         String spaceGuid = tagSet.getTag("spaceGuid");
-        return new ServiceInstance(serviceInstanceId, serviceDefinitionId, planId, organizationGuid, spaceGuid, null);
+        CreateServiceInstanceRequest wrapper = new CreateServiceInstanceRequest(serviceDefinitionId, planId, organizationGuid, spaceGuid).withServiceInstanceId(serviceInstanceId);
+        return new ServiceInstance(wrapper);
     }
 
     public boolean doesBucketExist(String bucket) {

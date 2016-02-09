@@ -15,13 +15,14 @@
  */
 package org.cloudfoundry.community.servicebroker.s3.service;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.cloudfoundry.community.servicebroker.exception.ServiceBrokerException;
+import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceDoesNotExistException;
 import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceExistsException;
-import org.cloudfoundry.community.servicebroker.model.ServiceDefinition;
+import org.cloudfoundry.community.servicebroker.exception.ServiceInstanceUpdateNotSupportedException;
+import org.cloudfoundry.community.servicebroker.model.CreateServiceInstanceRequest;
+import org.cloudfoundry.community.servicebroker.model.DeleteServiceInstanceRequest;
 import org.cloudfoundry.community.servicebroker.model.ServiceInstance;
+import org.cloudfoundry.community.servicebroker.model.UpdateServiceInstanceRequest;
 import org.cloudfoundry.community.servicebroker.s3.exception.UnsupportedPlanException;
 import org.cloudfoundry.community.servicebroker.s3.plan.basic.BasicPlan;
 import org.cloudfoundry.community.servicebroker.s3.plan.shared.SharedPlan;
@@ -44,34 +45,31 @@ public class S3ServiceInstanceService extends S3ServiceInstanceBase implements S
     }
 
     @Override
-    public ServiceInstance createServiceInstance(ServiceDefinition service, String serviceInstanceId, String planId,
-            String organizationGuid, String spaceGuid) throws ServiceInstanceExistsException, ServiceBrokerException {
+    public ServiceInstance createServiceInstance(CreateServiceInstanceRequest createServiceInstanceRequest)
+            throws ServiceInstanceExistsException, ServiceBrokerException {
         try {
-            plan = getPlan(planId);
+            plan = getPlan(createServiceInstanceRequest.getPlanId());
         } catch (UnsupportedPlanException e) {
             throw new ServiceBrokerException(e.getMessage());
         }
-        return plan.createServiceInstance(service, serviceInstanceId, planId, organizationGuid, spaceGuid);
+        return plan.createServiceInstance(createServiceInstanceRequest);
     }
 
     @Override
-    public ServiceInstance deleteServiceInstance(String id, String serviceId, String planId)
+    public ServiceInstance deleteServiceInstance(DeleteServiceInstanceRequest deleteServiceInstanceRequest)
             throws ServiceBrokerException {
         try {
-            plan = getPlan(planId);
+            plan = getPlan(deleteServiceInstanceRequest.getPlanId());
         } catch (UnsupportedPlanException e) {
             throw new ServiceBrokerException(e.getMessage());
         }
-        return plan.deleteServiceInstance(id, serviceId, planId);
+        return plan.deleteServiceInstance(deleteServiceInstanceRequest);
     }
 
     @Override
-    public List<ServiceInstance> getAllServiceInstances() {
-        List<ServiceInstance> serviceInstances = new ArrayList<ServiceInstance>();
-        serviceInstances.addAll(basicPlan.getAllServiceInstances());
-        serviceInstances.addAll(sharedPlan.getAllServiceInstances());
-        serviceInstances.addAll(singleBucketPlan.getAllServiceInstances());
-        return serviceInstances;
+    public ServiceInstance updateServiceInstance(UpdateServiceInstanceRequest updateServiceInstanceRequest)
+            throws ServiceInstanceUpdateNotSupportedException, ServiceBrokerException, ServiceInstanceDoesNotExistException {
+        throw new IllegalStateException("Not implemented");
     }
 
     @Override

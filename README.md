@@ -8,7 +8,7 @@ The broker currently publishes a single service and at most 2 plans for provisio
 
 The broker uses meta data in S3 and naming conventions to maintain the state of the services it is brokering. It does not maintain an internal database so it has no dependencies besides S3.
 
-Capability with the Cloud Foundry service broker API is indicated by the project version number. For example, version 2.3.0 is based off the 2.3 version of the broker API.
+Capability with the Cloud Foundry service broker API is indicated by the project version number. For example, version 2.4.0 is based off the 2.4 version of the broker API.
 
 ## Running
 
@@ -18,9 +18,9 @@ Simply run the JAR file and provide AWS credentials via the `AWS_ACCESS_KEY` and
 
 ```
 mvn package
-AWS_ACCESS_KEY=secret AWS_SECRET_KEY=secret java -jar target/s3-cf-service-broker-2.3.0-SNAPSHOT.jar
+AWS_ACCESS_KEY=secret AWS_SECRET_KEY=secret java -jar target/s3-cf-service-broker-2.4.0-SNAPSHOT.jar
 # with shared plan enabled
-AWS_ACCESS_KEY=secret AWS_SECRET_KEY=secret AWS_SHARED_BUCKET=cloud-foundry-shared java -jar target/s3-cf-service-broker-2.3.0-SNAPSHOT.jar
+AWS_ACCESS_KEY=secret AWS_SECRET_KEY=secret AWS_SHARED_BUCKET=cloud-foundry-shared java -jar target/s3-cf-service-broker-2.4.0-SNAPSHOT.jar
 ```
 
 ### In Cloud Foundry
@@ -28,7 +28,7 @@ AWS_ACCESS_KEY=secret AWS_SECRET_KEY=secret AWS_SHARED_BUCKET=cloud-foundry-shar
 Build s3-cf-service-broker and push it to Cloud Foundry:
 ```
 mvn package
-cf push s3-cf-service-broker -p target/s3-cf-service-broker-2.3.0-SNAPSHOT.jar --no-start
+cf push s3-cf-service-broker -p target/s3-cf-service-broker-2.4.0-SNAPSHOT.jar --no-start
 cf set-env s3-cf-service-broker AWS_ACCESS_KEY "MYAWSKEY"
 cf set-env s3-cf-service-broker AWS_SECRET_KEY "MYAWSSECRET"
 cf set-env s3-cf-service-broker AWS_REGION "eu-west-1" # (optional, default: US (= us-east-1))

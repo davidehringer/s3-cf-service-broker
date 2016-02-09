@@ -20,11 +20,9 @@ import com.amazonaws.services.identitymanagement.AmazonIdentityManagementClient;
 import com.amazonaws.services.identitymanagement.model.Group;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
-import com.amazonaws.services.s3.model.Bucket;
 import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
-import com.amazonaws.util.StringUtils;
 import com.jayway.restassured.http.ContentType;
 import com.jayway.restassured.response.ValidatableResponse;
 import org.apache.http.HttpStatus;
@@ -40,7 +38,6 @@ import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.List;
 
 import static com.jayway.restassured.RestAssured.given;
 import static org.junit.Assert.assertFalse;
@@ -114,12 +111,12 @@ public class BasicPlanIntegrationTests extends ServiceBrokerV2IntegrationTestBas
                 "}";
 
 
-        ValidatableResponse response = given().auth().basic(username, password).request().contentType(ContentType.JSON).body(request_body).when().put(createBindingPath).then().statusCode(HttpStatus.SC_CREATED);
+        ValidatableResponse response = given().auth().basic(username, password).header(apiVersionHeader).request().contentType(ContentType.JSON).body(request_body).when().put(createBindingPath).then().statusCode(HttpStatus.SC_CREATED);
         String accessKey = response.extract().path("credentials.access_key_id");
         String secretKey = response.extract().path("credentials.secret_access_key");
 
         //wait for AWS to do its user creation magic
-        Thread.sleep(1000 * 5);
+        Thread.sleep(1000 * 30);
         testBucketOperations(accessKey, secretKey, bucketNamePrefix + instanceId);
     }
 

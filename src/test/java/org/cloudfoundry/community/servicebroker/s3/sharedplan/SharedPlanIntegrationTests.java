@@ -111,24 +111,15 @@ public class SharedPlanIntegrationTests extends ServiceBrokerV2IntegrationTestBa
                 "}";
 
 
-        ValidatableResponse response = given().auth().basic(username, password).request().contentType(ContentType.JSON).body(request_body).when().put(createBindingPath).then().statusCode(HttpStatus.SC_CREATED);
+        ValidatableResponse response = given().auth().basic(username, password).header(apiVersionHeader).request().contentType(ContentType.JSON).body(request_body).when().put(createBindingPath).then().statusCode(HttpStatus.SC_CREATED);
         String accessKey = response.extract().path("credentials.access_key_id");
         String secretKey = response.extract().path("credentials.secret_access_key");
         String sharedBucket = response.extract().path("credentials.bucket");
         String keySuffix = response.extract().path("credentials.key_suffix");
 
         //wait for AWS to do its user creation magic
-        Thread.sleep(1000 * 5);
+        Thread.sleep(1000 * 30);
         testBucketOperations(accessKey, secretKey, sharedBucket, keySuffix);
-    }
-
-    @AfterClass
-    public static void wipeBucket() {
-        ObjectListing objects = s3.listObjects(awsSharedBucket);
-        for (S3ObjectSummary object: objects.getObjectSummaries()) {
-            s3.deleteObject(awsSharedBucket, object.getKey());
-        }
-        s3.deleteBucket(awsSharedBucket);
     }
 
     @AfterClass
@@ -142,5 +133,17 @@ public class SharedPlanIntegrationTests extends ServiceBrokerV2IntegrationTestBa
         }
         iam.deleteUserPolicy(new DeleteUserPolicyRequest(awsSharedUserName, "CFSharedBucketIamPolicy"));
         iam.deleteUser(new DeleteUserRequest(awsSharedUserName));
+    }
+
+    @AfterClass
+    public static void wipeBucket() throws Exception {
+        ObjectListing objects = s3.listObjects(awsSharedBucket);
+        for (S3ObjectSummary object: objects.getObjectSummaries()) {
+            s3.deleteObject(awsSharedBucket, object.getKey());
+        }
+        s3.deleteBucket(awsSharedBucket);
+
+        //cooldown to ensure that the next doesBucketExists call returns the correct result
+        Thread.sleep(1000 * 30);
     }
 }

@@ -234,12 +234,6 @@ public class SharedPlan implements Plan {
         return new ServiceInstanceBinding(bindingId, serviceInstanceId, null, null, null);
     }
 
-    // TODO needs to be implemented
-    @Override
-    public List<ServiceInstance> getAllServiceInstances() {
-        return Collections.emptyList();
-    }
-
     @Override
     public ServiceInstance getServiceInstance(String id) {
         String instanceConfigPath = getInstanceConfigPath(id);

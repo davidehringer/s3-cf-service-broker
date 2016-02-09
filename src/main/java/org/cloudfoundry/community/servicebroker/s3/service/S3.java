@@ -129,16 +129,6 @@ public class S3 {
         return null;
     }
 
-    public List<ServiceInstance> getAllServiceInstances() {
-        List<ServiceInstance> serviceInstances = Lists.newArrayList();
-        for (Bucket bucket : s3.listBuckets()) {
-            BucketTaggingConfiguration taggingConfiguration = s3.getBucketTaggingConfiguration(bucket.getName());
-            ServiceInstance serviceInstance = createServiceInstance(taggingConfiguration);
-            serviceInstances.add(serviceInstance);
-        }
-        return serviceInstances;
-    }
-
     private ServiceInstance createServiceInstance(BucketTaggingConfiguration taggingConfiguration) {
         // While the Java API has multiple TagSets, it would appear from
         // http://docs.aws.amazon.com/AmazonS3/latest/API/RESTBucketPUTtagging.html

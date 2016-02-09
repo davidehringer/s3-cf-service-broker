@@ -113,11 +113,6 @@ public class BasicPlan implements Plan {
     }
 
     @Override
-    public List<ServiceInstance> getAllServiceInstances() {
-        return s3.getAllServiceInstances();
-    }
-
-    @Override
     public ServiceInstance getServiceInstance(String id) {
         return s3.findServiceInstance(id);
     }
